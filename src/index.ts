@@ -3,11 +3,14 @@ import { client } from "./client.js";
 import { getPositionsForWallet } from "./services/position.js";
 import { getPoolState } from "./services/pool.js";
 import { determineRangeStatus, MonitorState } from "./services/monitor.js";
-import { formatAlertMessage, sendAlert } from "./services/notifier.js";
-import type { StateChange } from "./types.js";
+import { formatAlertMessage, formatStatusReport, sendAlert } from "./services/notifier.js";
+import type { StateChange, PoolState } from "./types.js";
 
 const monitorState = new MonitorState();
 let isRunning = true;
+
+const REPORT_INTERVAL_MS = 6 * 60 * 60 * 1000; // 6 hours
+let lastReportTime = 0;
 
 async function poll(): Promise<void> {
   console.log(`[${new Date().toISOString()}] Polling positions for ${config.walletAddress}...`);
@@ -21,6 +24,8 @@ async function poll(): Promise<void> {
 
   console.log(`  Found ${positions.length} active position(s).`);
 
+  const positionStates: { position: (typeof positions)[number]; poolState: PoolState; rangeStatus: string }[] = [];
+
   for (const position of positions) {
     const poolState = await getPoolState(client, position.poolAddress);
     const rangeStatus = determineRangeStatus(
@@ -29,6 +34,8 @@ async function poll(): Promise<void> {
       position.tickUpper,
       config.thresholdPercent,
     );
+
+    positionStates.push({ position, poolState, rangeStatus });
 
     const pairLabel = `${position.token0Symbol ?? "?"}/${position.token1Symbol ?? "?"}`;
     console.log(
@@ -51,6 +58,15 @@ async function poll(): Promise<void> {
       const payload = formatAlertMessage(stateChange);
       await sendAlert(config.webhookUrl, config.n8nApiKey, payload);
     }
+  }
+
+  // Periodic status report
+  const now = Date.now();
+  if (now - lastReportTime >= REPORT_INTERVAL_MS) {
+    console.log("  📊 Sending periodic status report...");
+    const report = formatStatusReport(positionStates);
+    await sendAlert(config.webhookUrl, config.n8nApiKey, report);
+    lastReportTime = now;
   }
 }
 

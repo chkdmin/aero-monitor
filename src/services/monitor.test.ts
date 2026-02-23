@@ -63,10 +63,10 @@ describe("determineRangeStatus", () => {
 });
 
 describe("MonitorState", () => {
-  it("first check with in_range returns null (no alert needed)", () => {
+  it("first check with in_range returns state change (initial alert)", () => {
     const monitor = new MonitorState();
     const result = monitor.checkStateChange(1n, "in_range");
-    expect(result).toBeNull();
+    expect(result).toEqual({ previousStatus: null, currentStatus: "in_range" });
   });
 
   it("first check with out_of_range returns state change", () => {

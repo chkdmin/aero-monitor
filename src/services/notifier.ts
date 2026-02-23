@@ -31,6 +31,28 @@ export function formatAlertMessage(change: StateChange): WebhookPayload {
   };
 }
 
+export function formatStatusReport(
+  positionStates: { position: StateChange["position"]; poolState: StateChange["poolState"]; rangeStatus: string }[],
+): WebhookPayload {
+  const title = "📊 LP 현황 리포트";
+  const lines: string[] = [];
+
+  if (positionStates.length === 0) {
+    lines.push("활성 포지션 없음");
+  } else {
+    for (const { position, poolState, rangeStatus } of positionStates) {
+      const pair = `${position.token0Symbol ?? "Unknown"}/${position.token1Symbol ?? "Unknown"}`;
+      const statusLabel = STATUS_LABELS[rangeStatus] ?? rangeStatus;
+      lines.push(`[#${position.tokenId}] ${pair}`);
+      lines.push(`  ${statusLabel} | tick: ${poolState.currentTick}`);
+      lines.push(`  Range: [${position.tickLower}, ${position.tickUpper})`);
+      lines.push("");
+    }
+  }
+
+  return { title, body: lines.join("\n").trimEnd() };
+}
+
 export async function sendAlert(
   webhookUrl: string,
   apiKey: string,

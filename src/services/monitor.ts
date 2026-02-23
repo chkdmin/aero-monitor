@@ -64,13 +64,9 @@ export class MonitorState {
     // Always update internal state
     this.previousStates.set(key, newStatus);
 
-    // First time seeing this position
+    // First time seeing this position — always alert
     if (previousStatus === null) {
-      // Only alert if it's not in_range
-      if (newStatus !== "in_range") {
-        return { previousStatus: null, currentStatus: newStatus };
-      }
-      return null;
+      return { previousStatus: null, currentStatus: newStatus };
     }
 
     // Status unchanged
