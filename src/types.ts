@@ -32,14 +32,7 @@ export interface StateChange {
   poolState: PoolState;
 }
 
-export interface AlertPayload {
-  tokenId: string;
-  pool: string;
-  previousStatus: string | null;
-  currentStatus: string;
-  currentTick: number;
-  tickLower: number;
-  tickUpper: number;
-  token0Symbol: string;
-  token1Symbol: string;
+export interface WebhookPayload {
+  title: string;
+  body: string;
 }

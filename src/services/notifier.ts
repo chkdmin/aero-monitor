@@ -1,51 +1,65 @@
-import type { AlertPayload, StateChange } from "../types.js";
+import type { WebhookPayload, StateChange } from "../types.js";
 
-export function formatAlertMessage(change: StateChange): AlertPayload {
+const STATUS_LABELS: Record<string, string> = {
+  in_range: "In Range ✅",
+  near_boundary: "경계 근접 ⚠️",
+  out_of_range: "Range 이탈 🚨",
+};
+
+function formatStatus(status: string | null): string {
+  if (!status) return "초기 감지";
+  return STATUS_LABELS[status] ?? status;
+}
+
+export function formatAlertMessage(change: StateChange): WebhookPayload {
+  const { position, poolState } = change;
+  const pair = `${position.token0Symbol ?? "Unknown"}/${position.token1Symbol ?? "Unknown"}`;
+
+  const emoji = change.currentStatus === "out_of_range" ? "🚨" : change.currentStatus === "near_boundary" ? "⚠️" : "✅";
+  const title = `${emoji} LP Range 알림: ${pair}`;
+
+  const lines: string[] = [];
+  lines.push(`${formatStatus(change.previousStatus)} → ${formatStatus(change.currentStatus)}`);
+  lines.push(`Pool: ${pair}`);
+  lines.push(`Position #${position.tokenId}`);
+  lines.push(`현재 tick: ${poolState.currentTick}`);
+  lines.push(`Range: [${position.tickLower}, ${position.tickUpper})`);
+
   return {
-    tokenId: change.position.tokenId.toString(),
-    pool: `${change.position.token0Symbol ?? "Unknown"}/${change.position.token1Symbol ?? "Unknown"}`,
-    previousStatus: change.previousStatus,
-    currentStatus: change.currentStatus,
-    currentTick: change.poolState.currentTick,
-    tickLower: change.position.tickLower,
-    tickUpper: change.position.tickUpper,
-    token0Symbol: change.position.token0Symbol ?? "Unknown",
-    token1Symbol: change.position.token1Symbol ?? "Unknown",
+    title,
+    body: lines.join("\n"),
   };
 }
 
 export async function sendAlert(
   webhookUrl: string,
-  payload: AlertPayload,
+  apiKey: string,
+  payload: WebhookPayload,
 ): Promise<void> {
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const response = await fetch(webhookUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-N8N-API-KEY": apiKey,
+        },
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
-      console.log(
-        `Alert sent successfully for token ${payload.tokenId} (${payload.pool}): ${payload.currentStatus}`,
-      );
+      console.log(`[Notifier] Alert sent: ${payload.title}`);
       return;
     } catch (error) {
       if (attempt === 0) {
-        console.error(
-          `Alert delivery failed (attempt 1), retrying in 3s...`,
-          error,
-        );
+        console.error("[Notifier] Alert delivery failed (attempt 1), retrying in 3s...", error);
         await new Promise((resolve) => setTimeout(resolve, 3000));
       } else {
-        console.error(
-          `Alert delivery failed (attempt 2), giving up.`,
-          error,
-        );
+        console.error("[Notifier] Alert delivery failed (attempt 2), giving up.", error);
       }
     }
   }

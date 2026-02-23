@@ -8,6 +8,11 @@ export const ADDRESSES = {
   CL_FACTORY_V1: "0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A" as const,
   // CL Pool Factory (gauge caps)
   CL_FACTORY_GAUGE_CAPS: "0xaDe65c38CD4849aDBA595a4323a8C7DdfE89716a" as const,
+
+  // Voter contract (manages all pool→gauge mappings)
+  VOTER: "0x16613524e02ad97eDfeF371bC883F2F5d6C480A5" as const,
+  // CL Gauge Factory (used to identify CL gauges vs V2 gauges)
+  CL_GAUGE_FACTORY: "0xD30677bd8dd15132F251Cb54CbDA552d2A05Fb08" as const,
 } as const;
 
 // NPM addresses to check (both versions)

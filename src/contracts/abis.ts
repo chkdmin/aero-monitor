@@ -67,6 +67,13 @@ export const clPoolAbi = [
     inputs: [],
     outputs: [{ name: "", type: "address" }],
   },
+  {
+    name: "gauge",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }],
+  },
 ] as const;
 
 export const clFactoryAbi = [
@@ -80,6 +87,64 @@ export const clFactoryAbi = [
       { name: "tickSpacing", type: "int24" },
     ],
     outputs: [{ name: "pool", type: "address" }],
+  },
+  {
+    name: "allPoolsLength",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    name: "allPools",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "index", type: "uint256" }],
+    outputs: [{ name: "", type: "address" }],
+  },
+] as const;
+
+export const clGaugeAbi = [
+  {
+    name: "stakedValues",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "depositor", type: "address" }],
+    outputs: [{ name: "", type: "uint256[]" }],
+  },
+] as const;
+
+export const voterAbi = [
+  {
+    name: "length",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    name: "pools",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "index", type: "uint256" }],
+    outputs: [{ name: "", type: "address" }],
+  },
+  {
+    name: "gauges",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "pool", type: "address" }],
+    outputs: [{ name: "", type: "address" }],
+  },
+] as const;
+
+export const gaugeInfoAbi = [
+  {
+    name: "gaugeFactory",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }],
   },
 ] as const;
 

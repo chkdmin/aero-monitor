@@ -49,7 +49,7 @@ async function poll(): Promise<void> {
       );
 
       const payload = formatAlertMessage(stateChange);
-      await sendAlert(config.webhookUrl, payload);
+      await sendAlert(config.webhookUrl, config.n8nApiKey, payload);
     }
   }
 }
