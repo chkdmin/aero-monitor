@@ -112,6 +112,16 @@ export const clGaugeAbi = [
     inputs: [{ name: "depositor", type: "address" }],
     outputs: [{ name: "", type: "uint256[]" }],
   },
+  {
+    name: "earned",
+    type: "function",
+    stateMutability: "view",
+    inputs: [
+      { name: "account", type: "address" },
+      { name: "tokenId", type: "uint256" },
+    ],
+    outputs: [{ name: "", type: "uint256" }],
+  },
 ] as const;
 
 export const voterAbi = [
@@ -155,5 +165,12 @@ export const erc20Abi = [
     stateMutability: "view",
     inputs: [],
     outputs: [{ name: "", type: "string" }],
+  },
+  {
+    name: "decimals",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint8" }],
   },
 ] as const;

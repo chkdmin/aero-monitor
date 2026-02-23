@@ -8,8 +8,11 @@ export interface PositionInfo {
   liquidity: bigint;
   poolAddress: `0x${string}`;
   npmAddress: `0x${string}`;
-  token0Symbol?: string;
-  token1Symbol?: string;
+  token0Symbol: string;
+  token1Symbol: string;
+  token0Decimals: number;
+  token1Decimals: number;
+  gaugeAddress?: `0x${string}`;
 }
 
 export interface PoolState {
@@ -30,6 +33,17 @@ export interface StateChange {
   previousStatus: RangeStatus | null;
   currentStatus: RangeStatus;
   poolState: PoolState;
+}
+
+export interface PositionSnapshot {
+  position: PositionInfo;
+  poolState: PoolState;
+  rangeStatus: RangeStatus;
+  amount0: number;
+  amount1: number;
+  percent0: number;
+  percent1: number;
+  emissionsEarned?: number;
 }
 
 export interface WebhookPayload {

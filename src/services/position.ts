@@ -19,6 +19,7 @@ async function resolvePosition(
   npm: `0x${string}`,
   factory: `0x${string}`,
   tokenId: bigint,
+  gaugeAddress?: `0x${string}`,
 ): Promise<PositionInfo | null> {
   const pos = await client.readContract({
     address: npm,
@@ -39,9 +40,11 @@ async function resolvePosition(
     }),
   );
 
-  const [token0Symbol, token1Symbol] = await Promise.all([
+  const [token0Symbol, token1Symbol, token0Decimals, token1Decimals] = await Promise.all([
     client.readContract({ address: token0, abi: erc20Abi, functionName: "symbol" }),
     client.readContract({ address: token1, abi: erc20Abi, functionName: "symbol" }),
+    client.readContract({ address: token0, abi: erc20Abi, functionName: "decimals" }),
+    client.readContract({ address: token1, abi: erc20Abi, functionName: "decimals" }),
   ]);
 
   return {
@@ -56,6 +59,9 @@ async function resolvePosition(
     npmAddress: npm,
     token0Symbol,
     token1Symbol,
+    token0Decimals,
+    token1Decimals,
+    gaugeAddress,
   };
 }
 
@@ -208,7 +214,7 @@ async function getStakedPositions(
       for (const tokenId of stakedIds) {
         for (const { npm, factory } of NPM_FACTORY_PAIRS) {
           try {
-            const info = await resolvePosition(client, npm, factory, tokenId);
+            const info = await resolvePosition(client, npm, factory, tokenId, batch[i]);
             if (info) {
               positions.push(info);
               break;

@@ -1,4 +1,4 @@
-import type { WebhookPayload, StateChange } from "../types.js";
+import type { WebhookPayload, StateChange, PositionSnapshot } from "../types.js";
 
 const STATUS_LABELS: Record<string, string> = {
   in_range: "In Range ✅",
@@ -11,46 +11,66 @@ function formatStatus(status: string | null): string {
   return STATUS_LABELS[status] ?? status;
 }
 
-export function formatAlertMessage(change: StateChange): WebhookPayload {
-  const { position, poolState } = change;
-  const pair = `${position.token0Symbol ?? "Unknown"}/${position.token1Symbol ?? "Unknown"}`;
+function formatAmount(amount: number): string {
+  if (amount >= 1000) return amount.toFixed(2);
+  if (amount >= 1) return amount.toFixed(4);
+  if (amount >= 0.0001) return amount.toFixed(6);
+  return amount.toExponential(4);
+}
+
+function formatSnapshotBlock(snap: PositionSnapshot): string {
+  const { position, amount0, amount1, percent0, percent1, emissionsEarned } = snap;
+  const lines: string[] = [];
+
+  lines.push(`${position.token0Symbol}: ${formatAmount(amount0)} (${percent0.toFixed(1)}%)`);
+  lines.push(`${position.token1Symbol}: ${formatAmount(amount1)} (${percent1.toFixed(1)}%)`);
+
+  if (emissionsEarned !== undefined) {
+    lines.push(`AERO 보상: ${formatAmount(emissionsEarned)}`);
+  }
+
+  lines.push(`현재 tick: ${snap.poolState.currentTick}`);
+  lines.push(`Range: [${position.tickLower}, ${position.tickUpper})`);
+
+  return lines.join("\n");
+}
+
+export function formatAlertMessage(change: StateChange, snapshot: PositionSnapshot): WebhookPayload {
+  const { position } = change;
+  const pair = `${position.token0Symbol}/${position.token1Symbol}`;
 
   const emoji = change.currentStatus === "out_of_range" ? "🚨" : change.currentStatus === "near_boundary" ? "⚠️" : "✅";
   const title = `${emoji} LP Range 알림: ${pair}`;
 
   const lines: string[] = [];
   lines.push(`${formatStatus(change.previousStatus)} → ${formatStatus(change.currentStatus)}`);
-  lines.push(`Pool: ${pair}`);
   lines.push(`Position #${position.tokenId}`);
-  lines.push(`현재 tick: ${poolState.currentTick}`);
-  lines.push(`Range: [${position.tickLower}, ${position.tickUpper})`);
+  lines.push("");
+  lines.push(formatSnapshotBlock(snapshot));
 
-  return {
-    title,
-    body: lines.join("\n"),
-  };
+  return { title, body: lines.join("\n") };
 }
 
-export function formatStatusReport(
-  positionStates: { position: StateChange["position"]; poolState: StateChange["poolState"]; rangeStatus: string }[],
-): WebhookPayload {
+export function formatStatusReport(snapshots: PositionSnapshot[]): WebhookPayload {
   const title = "📊 LP 현황 리포트";
-  const lines: string[] = [];
 
-  if (positionStates.length === 0) {
-    lines.push("활성 포지션 없음");
-  } else {
-    for (const { position, poolState, rangeStatus } of positionStates) {
-      const pair = `${position.token0Symbol ?? "Unknown"}/${position.token1Symbol ?? "Unknown"}`;
-      const statusLabel = STATUS_LABELS[rangeStatus] ?? rangeStatus;
-      lines.push(`[#${position.tokenId}] ${pair}`);
-      lines.push(`  ${statusLabel} | tick: ${poolState.currentTick}`);
-      lines.push(`  Range: [${position.tickLower}, ${position.tickUpper})`);
-      lines.push("");
-    }
+  if (snapshots.length === 0) {
+    return { title, body: "활성 포지션 없음" };
   }
 
-  return { title, body: lines.join("\n").trimEnd() };
+  const blocks: string[] = [];
+  for (const snap of snapshots) {
+    const { position, rangeStatus } = snap;
+    const pair = `${position.token0Symbol}/${position.token1Symbol}`;
+    const statusLabel = STATUS_LABELS[rangeStatus] ?? rangeStatus;
+
+    const lines: string[] = [];
+    lines.push(`[#${position.tokenId}] ${pair} ${statusLabel}`);
+    lines.push(formatSnapshotBlock(snap));
+    blocks.push(lines.join("\n"));
+  }
+
+  return { title, body: blocks.join("\n\n") };
 }
 
 export async function sendAlert(
