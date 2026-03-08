@@ -74,19 +74,19 @@ export function formatStatusReport(snapshots: PositionSnapshot[]): WebhookPayloa
 }
 
 export async function sendAlert(
-  webhookUrl: string,
-  apiKey: string,
+  botToken: string,
+  chatId: string,
   payload: WebhookPayload,
 ): Promise<void> {
+  const text = `${payload.title}\n\n${payload.body}`;
+  const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const response = await fetch(webhookUrl, {
+      const response = await fetch(url, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-N8N-API-KEY": apiKey,
-        },
-        body: JSON.stringify(payload),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId, text }),
       });
 
       if (!response.ok) {

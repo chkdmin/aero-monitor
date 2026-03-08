@@ -93,7 +93,7 @@ async function poll(): Promise<void> {
       );
 
       const payload = formatAlertMessage(stateChange, snapshot);
-      await sendAlert(config.webhookUrl, config.n8nApiKey, payload);
+      await sendAlert(config.telegramBotToken, config.telegramChatId, payload);
     }
   }
 
@@ -102,7 +102,7 @@ async function poll(): Promise<void> {
   if (now - lastReportTime >= REPORT_INTERVAL_MS) {
     console.log("  📊 Sending periodic status report...");
     const report = formatStatusReport(snapshots);
-    await sendAlert(config.webhookUrl, config.n8nApiKey, report);
+    await sendAlert(config.telegramBotToken, config.telegramChatId, report);
     lastReportTime = now;
   }
 }
